@@ -39,15 +39,15 @@ jobs:
 
       - name: Install Docker Agent
         run: |
-          # Download latest docker-agent binary
-          LATEST=$(curl -s https://api.github.com/repos/docker/docker-agent/releases/latest | jq -r .tag_name)
-          curl -fsSL "https://github.com/docker/docker-agent/releases/download/${LATEST}/docker-agent_linux_amd64.tar.gz" \
-            | tar -xz -C /usr/local/bin docker-agent
-          chmod +x /usr/local/bin/docker-agent
+          # Download the latest Docker Agent Linux binary
+          curl -L -o /tmp/docker-agent https://github.com/docker/docker-agent/releases/latest/download/docker-agent-linux-amd64
 
-          # Install as Docker CLI plugin
+          # Install as a Docker CLI plugin
           mkdir -p ~/.docker/cli-plugins
-          ln -sf /usr/local/bin/docker-agent ~/.docker/cli-plugins/docker-agent
+          mv /tmp/docker-agent ~/.docker/cli-plugins/docker-agent
+
+          # Make it executable
+          chmod +x ~/.docker/cli-plugins/docker-agent
           docker agent --version
 
       - name: Set curator prompt
