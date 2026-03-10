@@ -1,0 +1,81 @@
+name: Nemotron Auto Curator
+
+on:
+  # Run every Monday at 9am UTC
+  schedule:
+    - cron: "0 9 * * 1"
+
+  # Allow manual trigger with custom prompt
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Curator prompt to run"
+        required: false
+        default: "Find new Nemotron resources from the last week and create a PR adding them"
+        type: string
+      task:
+        description: "Curator task"
+        required: false
+        default: "discover"
+        type: choice
+        options:
+          - discover
+          - validate-links
+          - discover-models
+          - discover-papers
+
+jobs:
+  curate:
+    name: Run Nemotron Curator Agent
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Docker Agent
+        run: |
+          # Download latest docker-agent binary
+          LATEST=$(curl -s https://api.github.com/repos/docker/docker-agent/releases/latest | jq -r .tag_name)
+          curl -fsSL "https://github.com/docker/docker-agent/releases/download/${LATEST}/docker-agent_linux_amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin docker-agent
+          chmod +x /usr/local/bin/docker-agent
+
+          # Install as Docker CLI plugin
+          mkdir -p ~/.docker/cli-plugins
+          ln -sf /usr/local/bin/docker-agent ~/.docker/cli-plugins/docker-agent
+          docker agent --version
+
+      - name: Set curator prompt
+        id: prompt
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PROMPT="${{ github.event.inputs.prompt }}"
+          else
+            # Default scheduled prompt
+            PROMPT="Find new Nemotron resources (models, papers, blogs, tools) published in the last 7 days and create a PR adding them to the awesome list"
+          fi
+          echo "prompt=${PROMPT}" >> $GITHUB_OUTPUT
+
+      - name: Run Nemotron Curator Agent
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker agent run ./auto-curator-agent/nemotron-curator.yaml \
+            "${{ steps.prompt.outputs.prompt }}"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Nemotron Curator Run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Prompt**: ${{ steps.prompt.outputs.prompt }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Model**: nvidia/Llama-3.1-Nemotron-70B-Instruct-HF" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the [Pull Requests](https://github.com/${{ github.repository }}/pulls) tab for any curator PRs." >> $GITHUB_STEP_SUMMARY
