@@ -11,10 +11,10 @@ version: "3"
 #   4. Submitting PRs to update the awesome list
 #
 # Powered by Nemotron model on HuggingFace Inference API
-# Requires: HF_TOKEN (Hugging Face API token)
+# Requires: NVIDIA_API_KEY (get free credits at build.nvidia.com)
 #
 # Usage:
-#   export HF_TOKEN=your_huggingface_token
+#   export NVIDIA_API_KEY=your_nvidia_api_key
 #   docker agent run ./nemotron-curator.yaml "Find new Nemotron blog posts and papers from the last week"
 #   docker agent run ./nemotron-curator.yaml "Check all links in the awesome list for broken URLs"
 #   docker agent run ./nemotron-curator.yaml "Search for new Nemotron models released on HuggingFace"
@@ -22,26 +22,26 @@ version: "3"
 #   docker agent run ./nemotron-curator.yaml "Create a PR adding the latest resources you found"
 # =============================================================================
 
-# HuggingFace Inference API as provider (OpenAI-compatible endpoint)
-# Nemotron is available at nvidia/Llama-3.1-Nemotron-70B-Instruct-HF
-# See: https://huggingface.co/nvidia/Llama-3.1-Nemotron-70B-Instruct-HF
+# NVIDIA API at build.nvidia.com — OpenAI-compatible, free tier available
+# Sign up at https://build.nvidia.com to get your API key
+# Requires: NVIDIA_API_KEY
 providers:
-  huggingface:
+  nvidia:
     api_type: openai_chatcompletions
-    base_url: https://api-inference.huggingface.co/models/nvidia/Llama-3.1-Nemotron-70B-Instruct-HF/v1
-    token_key: HF_TOKEN
+    base_url: https://integrate.api.nvidia.com/v1
+    token_key: NVIDIA_API_KEY
 
 models:
-  # Primary model: Nemotron 70B for complex curation and reasoning tasks
+  # Primary model: Llama Nemotron Ultra for complex curation and reasoning tasks
   smart:
-    provider: huggingface
-    model: nvidia/Llama-3.1-Nemotron-70B-Instruct-HF
+    provider: nvidia
+    model: nvidia/llama-3.1-nemotron-nano-8b-v1
     max_tokens: 8192
 
-  # Fast model: Nemotron Nano for simpler validation tasks
+  # Fast model: Llama Nemotron Nano for simpler validation tasks
   fast:
-    provider: huggingface
-    model: nvidia/Llama-3.1-Nemotron-Nano-8B-v1
+    provider: nvidia
+    model: nvidia/llama-3.1-nemotron-nano-8b-v1
     max_tokens: 4096
 
 agents:
@@ -53,12 +53,12 @@ agents:
     skills: true
     description: |
       Coordinates maintenance of the awesome-nvidia-nemotron list at
-      github.com/ajeetraina/awesome-nvidia-nemotron. Discovers new resources,
+      github.com/collabnix/awesome-nvidia-nemotron. Discovers new resources,
       validates links, and submits PRs. Powered by Nemotron itself.
     instruction: |
       You are the curator of the awesome-nvidia-nemotron list, a community-maintained
       collection of NVIDIA Nemotron resources hosted at:
-      https://github.com/ajeetraina/awesome-nvidia-nemotron
+      https://github.com/collabnix/awesome-nvidia-nemotron
 
       You are powered by NVIDIA's Nemotron model — an agentic AI model curating
       resources about the Nemotron family itself.
@@ -111,7 +111,7 @@ agents:
       - HuggingFace model entries should include model card link and key specs
 
       ## Repository Details
-      - Owner: ajeetraina
+      - Owner: collabnix
       - Repo: awesome-nvidia-nemotron
       - Main file: README.md
       - Default branch: main
@@ -124,6 +124,8 @@ agents:
       - type: todo
       - type: mcp
         ref: docker:github
+        env:
+          GITHUB_PERSONAL_ACCESS_TOKEN: $GITHUB_PERSONAL_ACCESS_TOKEN
 
   # ---------------------------------------------------------------------------
   # DISCOVERER AGENT: Finds new Nemotron resources
@@ -216,6 +218,8 @@ agents:
       - type: filesystem
       - type: mcp
         ref: docker:github
+        env:
+          GITHUB_PERSONAL_ACCESS_TOKEN: $GITHUB_PERSONAL_ACCESS_TOKEN
 
   # ---------------------------------------------------------------------------
   # VALIDATOR AGENT: Checks links and content quality
@@ -264,6 +268,8 @@ agents:
       - type: think
       - type: mcp
         ref: docker:github
+        env:
+          GITHUB_PERSONAL_ACCESS_TOKEN: $GITHUB_PERSONAL_ACCESS_TOKEN
 
   # ---------------------------------------------------------------------------
   # PUBLISHER AGENT: Creates branches and PRs
@@ -280,7 +286,7 @@ agents:
 
       ## Workflow
 
-      1. **Read current README.md** from ajeetraina/awesome-nvidia-nemotron (main branch)
+      1. **Read current README.md** from collabnix/awesome-nvidia-nemotron (main branch)
          to get the latest SHA and content
       2. **Create a branch** named one of:
          - `curator/add-resources-YYYY-MM-DD` (for new content)
@@ -290,9 +296,24 @@ agents:
       3. **Update README.md** inserting new entries into the correct sections,
          preserving all existing content and formatting exactly
       4. **Create a PR** with:
-         - Clear title: e.g., "feat: Add 3 new Nemotron resources [curator-bot]"
-         - Body listing all changes with links and descriptions
-         - Label: "curator-bot" if available
+         - Clear title: e.g., "feat: Add 3 new Nemotron resources [agent-bot]"
+         - Body that starts with the agent-managed banner (see below) followed by
+           a list of all changes with links and descriptions
+         - Label: "agent-bot" if available, otherwise "curator-bot"
+
+      ## PR Body Template
+      Every PR must begin with this banner so contributors can immediately see it
+      was raised by the automated agent:
+
+      ```
+      > 🤖 **This PR was automatically raised by the Nemotron Auto-Curator Agent.**
+      > The agent discovered, validated, and formatted these resources autonomously.
+      > Please review the additions before merging.
+
+      ---
+      ```
+
+      Then list the resources added/changed.
 
       ## Section Formatting Rules (CRITICAL)
       Match the existing formatting style in each section exactly.
@@ -336,7 +357,7 @@ agents:
       - Verify markdown renders correctly before creating the PR
 
       ## Repository Details
-      - Owner: ajeetraina
+      - Owner: collabnix
       - Repo: awesome-nvidia-nemotron
       - File: README.md
       - Default branch: main
@@ -346,3 +367,5 @@ agents:
       - type: think
       - type: mcp
         ref: docker:github
+        env:
+          GITHUB_PERSONAL_ACCESS_TOKEN: $GITHUB_PERSONAL_ACCESS_TOKEN
