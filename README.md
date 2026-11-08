@@ -274,6 +274,7 @@ Ready-to-run microservices for production deployment of Nemotron models on any G
 | **SGLang** | Fast inference for structured generation | [SGLang GitHub](https://github.com/sgl-project/sglang) |
 | **Ollama** | Local model serving; easy to run Nemotron locally | [Ollama](https://ollama.com) |
 | **llama.cpp** | CPU + GPU inference; quantized models | [llama.cpp GitHub](https://github.com/ggml-org/llama.cpp) |
+| **Kapitsa** | Native Apple silicon (Mac) inference engine; runs Nemotron 3 Nano, Nano 9B v2 and Nemotron 3.5 locally with OpenAI- and Anthropic-compatible APIs | [Kapitsa GitHub](https://github.com/nace-ai/kapitsa) |
 | **HuggingFace Transformers** | For development and research | [Transformers Docs](https://huggingface.co/docs/transformers) |
 | **TensorRT-LLM** | NVIDIA-optimized; highest throughput on NVIDIA GPUs | [TRT-LLM GitHub](https://github.com/NVIDIA/TensorRT-LLM) |
 
